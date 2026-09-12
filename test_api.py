@@ -70,4 +70,30 @@ except urllib.error.HTTPError as e:
 s, _ = post_file("/api/upload", b"")
 check("upload vacio 400", s == 400)
 
+# hero
+def hero_req(method, data=None, admin=True):
+    headers = {}
+    if admin: headers["X-Admin-Token"] = "1234"
+    if data: headers["Content-Type"] = "multipart/form-data; boundary=BND"
+    req = urllib.request.Request(B + "/api/hero", data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req) as r:
+            return r.status, r.read()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read()
+hb = (b"--BND\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"h.jpg\"\r\n"
+      b"Content-Type: image/jpeg\r\n\r\n" + open(_big, "rb").read() + b"\r\n--BND--\r\n")
+s, _ = hero_req("POST", hb, admin=False)
+check("hero sin clave 401", s == 401)
+s, raw = hero_req("POST", hb)
+check("hero upload 200", s == 200 and b"/f/hero.jpg" in raw)
+s, raw = get("/api/hero")
+check("hero get 200", s == 200)
+s, _ = hero_req("DELETE")
+check("hero delete 200", s == 200)
+try:
+    get("/api/hero"); check("hero get 404 tras borrar", False)
+except urllib.error.HTTPError as e:
+    check("hero get 404 tras borrar", e.code == 404)
+
 print(f"\nTODO OK: {n} checks")

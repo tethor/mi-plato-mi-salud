@@ -16,9 +16,9 @@ async function getPhotos(){
   return res.json();
 }
 
-function heroArt(){
+function heroArt(src){
   return `<div class="hero-art"><div class="blob"></div>`
-    + `<img class="hero-photo" src="${HERO_PHOTO}" alt="Foto grupal del evento" onload="document.getElementById('heroDefault').style.display='none'" onerror="this.remove()">`
+    + `<img class="hero-photo" src="${src}" alt="Foto grupal del evento" onload="document.getElementById('heroDefault').style.display='none'" onerror="this.remove()">`
     + `<div id="heroDefault"><div class="bubble">¡Hoy aprendimos<br>a comer mejor! 💚</div><div class="plate-card"><div class="plate-top"><span class="mini-tag">PLATO DEL BUEN COMER</span><span style="font-size:26px">🍎🥦</span></div><div class="plate"><span class="food a">🥦</span><span class="food b">🌽</span><span class="food c">🍎</span><span class="food d">💧</span></div><div style="text-align:center;font-weight:900;margin-top:8px">¡Hoy elegimos comer mejor!</div></div><div class="mascot"><img src="stickers/mascota.png" alt="Mascota plato saludable"></div><span class="spark s1">✦</span><span class="spark s2">●</span><span class="spark s3">✿</span></div></div>`;
 }
 
@@ -39,7 +39,9 @@ function momentosHTML(photos, total){
 }
 
 async function home(){
-  shell(`<main><section class="hero"><div class="container hero-grid"><div><span class="kicker">IMSS · UMF 178 · Evento escolar</span><h1>Mi Plato,<br><span class="grad">Mi Salud</span> ✦</h1><p>Mamá, papá: aquí están las fotos de lo que vivieron hoy sus hijos. Juegos, actividades y lo que aprendieron sobre comer mejor. 💚</p><div class="cta-row"><a class="btn btn-primary" href="#/galeria">📸 Ver las fotos</a></div></div>${heroArt()}</div></section>`
+  let heroSrc = HERO_PHOTO;
+  try{ const r = await fetch(`${API_BASE}/api/hero`); if(r.ok) heroSrc = (await r.json()).url; }catch(e){}
+  shell(`<main><section class="hero"><div class="container hero-grid"><div><span class="kicker">IMSS · UMF 178 · Evento escolar</span><h1>Mi Plato,<br><span class="grad">Mi Salud</span> ✦</h1><p>Mamá, papá: aquí están las fotos de lo que vivieron hoy sus hijos. Juegos, actividades y lo que aprendieron sobre comer mejor. 💚</p><div class="cta-row"><a class="btn btn-primary" href="#/galeria">📸 Ver las fotos</a></div></div>${heroArt(heroSrc)}</div></section>`
   + platoSection()
   + `<section class="section" style="padding-top:10px"><div class="container"><div class="section-head"><div><div class="eyebrow">Recuerdos</div><h2>Lo que vivimos hoy</h2></div></div><div id="momentos"><div class="empty"><strong>Cargando fotos…</strong></div></div></div></section></main>`);
   try{
@@ -82,10 +84,39 @@ function admin(){
 }
 
 async function upload(){
-  shell(`<main class="inner-page"><div class="container"><div class="page-title"><div><div class="eyebrow">Estación de fotos</div><h1>Foto + QR</h1><p>Elige la foto y aquí mismo sale su QR para imprimir.</p></div><div class="tiny" id="apiState">Revisando conexión…</div></div><div class="upload-shell"><label class="drop" for="photo"><div><div class="big">📷</div><h2 style="font-family:'Baloo 2';font-size:34px;margin:6px 0">Elige una foto</h2><p style="color:#60756b">Se vale JPG, PNG o WEBP</p><input id="photo" type="file" accept="image/*"/></div></label><section class="upload-preview"><div id="uploadState"><div style="padding:38px;text-align:center;color:#73847c">La foto y su QR aparecerán aquí.</div></div></section></div></div></main>`);
+  shell(`<main class="inner-page"><div class="container"><div class="page-title"><div><div class="eyebrow">Estación de fotos</div><h1>Foto + QR</h1><p>Elige la foto y aquí mismo sale su QR para imprimir.</p></div><div class="tiny" id="apiState">Revisando conexión…</div></div><div class="upload-shell"><label class="drop" for="photo"><div><div class="big">📷</div><h2 style="font-family:'Baloo 2';font-size:34px;margin:6px 0">Elige una foto</h2><p style="color:#60756b">Se vale JPG, PNG o WEBP</p><input id="photo" type="file" accept="image/*"/></div></label><section class="upload-preview"><div id="uploadState"><div style="padding:38px;text-align:center;color:#73847c">La foto y su QR aparecerán aquí.</div></div></section></div><div class="page-title" style="margin-top:28px"><div><div class="eyebrow">Portada</div><h1 style="font-size:40px">Foto principal</h1><p>La que se ve grande en el inicio.</p></div></div><div class="upload-shell"><label class="drop" for="heroFile"><div><div class="big">🖼️</div><h2 style="font-family:'Baloo 2';font-size:28px;margin:6px 0">Elige la portada</h2><input id="heroFile" type="file" accept="image/*"/></div></label><section class="upload-preview"><div id="heroState"><div style="padding:38px;text-align:center;color:#73847c">Aquí ves cómo quedó.</div></div><div class="cta-row" style="margin-top:12px"><button class="btn btn-soft" id="heroDel">Quitar portada</button></div></section></div></div></main>`);
   document.getElementById('photo').addEventListener('change', handleUpload);
+  wireHero();
   try{ await getPhotos(); document.getElementById('apiState').innerHTML = 'Listo para recibir fotos ✓'; }
   catch(e){ document.getElementById('apiState').innerHTML = 'Sin conexión con el servidor. Revísalo antes de seguir.'; }
+}
+
+function wireHero(){
+  const key = () => sessionStorage.getItem('MIPLAT_KEY') || '';
+  const paint = async () => {
+    try{
+      const r = await fetch(`${API_BASE}/api/hero`);
+      document.getElementById('heroState').innerHTML = r.ok
+        ? `<div class="preview-img"><img src="${(await r.json()).url}" alt="Portada actual"/></div>`
+        : `<div style="padding:38px;text-align:center;color:#73847c">Aún no hay portada, se ve la ilustración.</div>`;
+    }catch(e){}
+  };
+  paint();
+  document.getElementById('heroFile').addEventListener('change', async e => {
+    const file = e.target.files?.[0]; if(!file) return;
+    const box = document.getElementById('heroState');
+    box.innerHTML = `<div style="padding:38px;text-align:center;color:#73847c">Subiendo portada…</div>`;
+    const form = new FormData(); form.append('photo', file);
+    try{
+      const r = await fetch(`${API_BASE}/api/hero`, {method:'POST', headers:{'X-Admin-Token':key()}, body:form});
+      if(!r.ok) throw new Error('hero');
+      box.innerHTML = `<div class="preview-img"><img src="${(await r.json()).url}" alt="Portada nueva"/></div><div class="success">Portada actualizada ✓</div>`;
+    }catch(err){ box.innerHTML = `<div class="empty"><strong>No se pudo subir</strong><p>Inténtalo de nuevo.</p></div>`; }
+  });
+  document.getElementById('heroDel').onclick = async () => {
+    await fetch(`${API_BASE}/api/hero`, {method:'DELETE', headers:{'X-Admin-Token':key()}});
+    paint();
+  };
 }
 
 async function handleUpload(e){

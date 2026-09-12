@@ -4,10 +4,10 @@ from urllib.parse import urlparse, parse_qs
 try:
     from PIL import Image
     from io import BytesIO
-    def _thumb(blob, dest):
+    def _thumb(blob, dest, size=(800, 800), q=70):
         img = Image.open(BytesIO(blob)).convert("RGB")
-        img.thumbnail((800, 800))
-        img.save(dest, quality=70)
+        img.thumbnail(size)
+        img.save(dest, quality=q)
 except ImportError:
     _thumb = None  # ponytail: sin pillow no hay miniaturas, la foto igual se guarda
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -42,6 +42,13 @@ class H(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(b)))
         self._cors(); self.end_headers(); self.wfile.write(b)
+    def do_DELETE(self):
+        if self.path.split("?")[0] != "/api/hero":
+            self.send_response(404); self.end_headers(); return
+        if not self._admin():
+            self._json(401, {"error": "sin permiso"}); return
+        (UP / "hero.jpg").unlink(missing_ok=True)
+        self._json(200, {"ok": True})
     def _json(self, code, obj):
         b = json.dumps(obj).encode()
         self.send_response(code)
@@ -83,6 +90,11 @@ class H(BaseHTTPRequestHandler):
         elif path == "/api/admin/check":
             if self._admin(): self._json(200, {"ok": True})
             else: self._json(401, {"error": "sin permiso"})
+        elif path == "/api/hero":
+            h = UP / "hero.jpg"
+            if not h.exists():
+                self._json(404, {"error": "sin foto de portada"}); return
+            self._json(200, {"url": f"{self._host()}/f/hero.jpg"})
         elif path.startswith("/api/photo/"):
             pid = path[len("/api/photo/"):].strip("/")
             if pid not in db:
@@ -99,7 +111,7 @@ class H(BaseHTTPRequestHandler):
         else:
             self.send_response(404); self.end_headers()
     def do_POST(self):
-        if self.path != "/api/upload":
+        if self.path.split("?")[0] not in ("/api/upload", "/api/hero"):
             self.send_response(404); self.end_headers(); return
         if not self._admin():
             self._json(401, {"error": "sin permiso"}); return
@@ -122,6 +134,13 @@ class H(BaseHTTPRequestHandler):
             self._json(400, {"error": "el archivo viene vacio"}); return
         if len(blob) > MAXB:
             self._json(413, {"error": "foto muy pesada, max 15MB"}); return
+        if self.path.split("?")[0] == "/api/hero":
+            if _thumb:
+                try: _thumb(blob, UP / "hero.jpg", (1600, 1600), 75)
+                except Exception: (UP / "hero.jpg").write_bytes(blob)
+            else:
+                (UP / "hero.jpg").write_bytes(blob)
+            self._json(200, {"url": f"{self._host()}/f/hero.jpg"}); return
         pid = secrets.token_urlsafe(4).replace("-", "").replace("_", "")[:6]
         fname = f"{pid}{ext}"
         UP.joinpath(fname).write_bytes(blob)

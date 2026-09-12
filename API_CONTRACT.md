@@ -13,6 +13,10 @@ POST /api/upload — multipart/form-data, campo `photo` (jpg/png/webp, máx 15MB
 
 GET /api/admin/check — verifica clave (header `X-Admin-Token`). 200 `{"ok":true}` · 401.
 
+POST /api/hero — foto de portada (header `X-Admin-Token`). La reduce a 1600px y guarda en el volumen. → 200 `{"url":".../f/hero.jpg"}`.
+GET /api/hero — `{"url":...}` o 404 si no hay.
+DELETE /api/hero — quita la portada (header `X-Admin-Token`).
+
 GET /api/photos — `[{id,url,file,name,ts}]`, recientes primero. Galería/home.
 GET /api/photo/:id — una foto. 404 `{"error":...}` si no existe.
 GET /f/:archivo — imagen directa.
