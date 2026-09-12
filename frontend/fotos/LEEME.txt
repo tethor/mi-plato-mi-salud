@@ -1,0 +1,6 @@
+Pon aquí la foto grupal del evento con el nombre exacto: grupal.jpg
+(ruta completa: frontend/fotos/grupal.jpg)
+
+Esa foto sale grande en la portada. Si el archivo no existe,
+la portada muestra la ilustración del plato por defecto.
+JPG o PNG, mínimo 1200px de ancho para que se vea nítida.
