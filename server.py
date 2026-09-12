@@ -1,5 +1,6 @@
 """Photobooth QR backend. Corre con: python3 server.py (pillow opcional: miniaturas)"""
 import cgi, json, os, secrets, time, mimetypes
+from urllib.parse import urlparse, parse_qs
 try:
     from PIL import Image
     from io import BytesIO
@@ -24,6 +25,7 @@ DB = UP / "db.json"
 if not DB.exists(): DB.write_text("{}")
 PORT = int(os.environ.get("PORT", 8471))
 PUBLIC = os.environ.get("PUBLIC_URL", "").rstrip("/")  # ej: https://fotos.midominio.com
+ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "1234")
 MAXB = 15 * 1024 * 1024  # ponytail: tope fijo para fotos; súbelo si aceptas video
 
 def load_db(): return json.loads(DB.read_text())
@@ -61,6 +63,10 @@ class H(BaseHTTPRequestHandler):
         if (TH / f"{pid}.jpg").exists():
             rec["thumb"] = f"{host}/t/{pid}.jpg"
         return rec
+    def _admin(self):
+        if self.headers.get("X-Admin-Token") == ADMIN_TOKEN: return True
+        q = parse_qs(urlparse(self.path).query)
+        return q.get("key", [""])[0] == ADMIN_TOKEN
     def do_OPTIONS(self):
         self.send_response(204); self._cors(); self.end_headers()
     def do_GET(self):
@@ -74,6 +80,9 @@ class H(BaseHTTPRequestHandler):
         elif path == "/api/photos":
             recs = sorted(db.items(), key=lambda kv: kv[1]["ts"], reverse=True)
             self._json(200, [self._rec(pid, r) for pid, r in recs])
+        elif path == "/api/admin/check":
+            if self._admin(): self._json(200, {"ok": True})
+            else: self._json(401, {"error": "sin permiso"})
         elif path.startswith("/api/photo/"):
             pid = path[len("/api/photo/"):].strip("/")
             if pid not in db:
@@ -92,6 +101,8 @@ class H(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path != "/api/upload":
             self.send_response(404); self.end_headers(); return
+        if not self._admin():
+            self._json(401, {"error": "sin permiso"}); return
         try:
             if int(self.headers.get("Content-Length", 0)) > MAXB:
                 self.send_response(413); self.send_header("Connection", "close")

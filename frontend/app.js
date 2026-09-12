@@ -4,8 +4,8 @@ const API_BASE = localStorage.getItem('MIPLAT_API_BASE') || location.origin;
 const HERO_PHOTO = 'fotos/grupal.jpg';
 
 
-function nav(){return `<header class="nav"><div class="nav-inner"><a class="brand" href="#/" style="text-decoration:none;color:inherit"><img class="brand-logo" src="stickers/logo.png" alt="Mi Plato, Mi Salud"></a><nav class="nav-links"><a href="#/">Inicio</a><a href="#/galeria">Galería</a><a href="#/subir">Subir foto</a></nav></div></header>`}
-function footer(){return `<footer class="footer"><div class="container footer-inner"><div><strong>Mi Plato, Mi Salud</strong><br>IMSS UMF 178 · Evento escolar</div><div>Pequeños hábitos, grandes cambios. ♥</div></div></footer>`}
+function nav(){return `<header class="nav"><div class="nav-inner"><a class="brand" href="#/" style="text-decoration:none;color:inherit"><img class="brand-logo" src="stickers/logo.png" alt="Mi Plato, Mi Salud"></a><nav class="nav-links"><a href="#/">Inicio</a><a href="#/galeria">Galería</a></nav></div></header>`}
+function footer(){return `<footer class="footer"><div class="container footer-inner"><div><strong>Mi Plato, Mi Salud</strong><br>IMSS UMF 178 · Evento escolar</div><div>Pequeños hábitos, grandes cambios. ♥ · <a href="#/admin" style="color:inherit">Admin</a></div></div></footer>`}
 function shell(content){document.querySelector('#app').innerHTML=`<div class="page">${nav()}${content}${footer()}</div>`}
 function fmt(ts){try{return new Date(ts*1000).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch(e){return ''}}
 function safeName(s){return String(s||'foto').replace(/[^\wáéíóúñü \-]+/gi,'').slice(0,60)||'foto'}
@@ -39,7 +39,7 @@ function momentosHTML(photos, total){
 }
 
 async function home(){
-  shell(`<main><section class="hero"><div class="container hero-grid"><div><span class="kicker">IMSS · UMF 178 · Evento escolar</span><h1>Mi Plato,<br><span class="grad">Mi Salud</span> ✦</h1><p>Mamá, papá: aquí están las fotos de lo que vivieron hoy sus hijos. Juegos, actividades y lo que aprendieron sobre comer mejor. 💚</p><div class="cta-row"><a class="btn btn-primary" href="#/galeria">📸 Ver las fotos</a><a class="btn btn-soft" href="#/subir">＋ Subir foto</a></div></div>${heroArt()}</div></section>`
+  shell(`<main><section class="hero"><div class="container hero-grid"><div><span class="kicker">IMSS · UMF 178 · Evento escolar</span><h1>Mi Plato,<br><span class="grad">Mi Salud</span> ✦</h1><p>Mamá, papá: aquí están las fotos de lo que vivieron hoy sus hijos. Juegos, actividades y lo que aprendieron sobre comer mejor. 💚</p><div class="cta-row"><a class="btn btn-primary" href="#/galeria">📸 Ver las fotos</a></div></div>${heroArt()}</div></section>`
   + platoSection()
   + `<section class="section" style="padding-top:10px"><div class="container"><div class="section-head"><div><div class="eyebrow">Recuerdos</div><h2>Lo que vivimos hoy</h2></div></div><div id="momentos"><div class="empty"><strong>Cargando fotos…</strong></div></div></div></section></main>`);
   try{
@@ -51,23 +51,34 @@ async function home(){
 }
 
 function photoCard(p){
-  return `<a href="#/foto/${p.id}" class="photo-card" style="text-decoration:none" aria-label="Ver ${safeName(p.name)}"><img src="${p.thumb || p.file}" alt="${safeName(p.name)}" loading="lazy"/><div class="overlay"><div style="font-weight:900">${safeName(p.name)}</div><div class="tiny" style="color:#fff">${fmt(p.ts)}</div></div></a>`;
+  return `<a href="#/foto/${p.id}" class="photo-card" style="text-decoration:none" aria-label="Ver foto"><img src="${p.thumb || p.file}" alt="Foto del evento" loading="lazy"/><div class="overlay"><div class="tiny" style="color:#fff">${fmt(p.ts)}</div></div></a>`;
 }
 
 async function gallery(){
-  shell(`<main class="inner-page"><div class="container"><div class="page-title"><div><div class="eyebrow">Recuerdos del evento</div><h1>Galería 📸</h1><p>Aquí están todas las fotos del día. Toca una para verla en grande.</p></div><div class="toolbar"><input class="search" id="search" placeholder="Buscar foto…"/><a class="btn btn-primary" href="#/subir">＋ Subir foto</a></div></div><div class="gallery-grid" id="gallery"><div class="empty" style="grid-column:1/-1"><strong>Cargando fotos…</strong></div></div></div></main>`);
+  shell(`<main class="inner-page"><div class="container"><div class="page-title"><div><div class="eyebrow">Recuerdos del evento</div><h1>Galería 📸</h1><p>Aquí están todas las fotos del día. Toca una para verla en grande.</p></div></div><div class="gallery-grid" id="gallery"><div class="empty" style="grid-column:1/-1"><strong>Cargando fotos…</strong></div></div></div></main>`);
   let photos = [];
   try{ photos = await getPhotos(); }catch(e){
     document.getElementById('gallery').innerHTML = `<div class="empty" style="grid-column:1/-1"><strong>No se pudieron cargar las fotos</strong><p>Revisa la conexión e inténtalo de nuevo.</p></div>`;
     return;
   }
-  const paint = q => {
-    const list = photos.filter(p => (p.name||'').toLowerCase().includes(q));
-    document.getElementById('gallery').innerHTML = list.length ? list.map(photoCard).join('')
-      : `<div class="empty" style="grid-column:1/-1"><strong>${photos.length ? 'No hay fotos con ese nombre' : 'Todavía no hay fotos 📸'}</strong><p>${photos.length ? 'Prueba con otra palabra.' : 'Sé la primera persona en subir una del evento.'}</p></div>`;
+  document.getElementById('gallery').innerHTML = photos.length ? photos.map(photoCard).join('')
+    : `<div class="empty" style="grid-column:1/-1"><strong>Todavía no hay fotos 📸</strong><p>Vuelve pronto, aquí aparecerán los recuerdos del evento.</p></div>`;
+}
+
+function admin(){
+  if(sessionStorage.getItem('MIPLAT_KEY')){ upload(); return; }
+  shell(`<main class="inner-page"><div class="container" style="max-width:480px"><div class="page-title"><div><div class="eyebrow">Solo personal</div><h1>Admin</h1><p>Escribe la contraseña para subir fotos.</p></div></div><div class="upload-preview"><input class="search" id="admKey" type="password" inputmode="numeric" placeholder="Contraseña" style="width:100%"/><div class="cta-row"><button class="btn btn-primary" id="admGo">Entrar</button></div><div class="tiny" id="admErr"></div></div></div></main>`);
+  const go = async () => {
+    const k = document.getElementById('admKey').value;
+    try{
+      const r = await fetch(`${API_BASE}/api/admin/check`, {headers:{'X-Admin-Token':k}});
+      if(!r.ok) throw new Error('auth');
+      sessionStorage.setItem('MIPLAT_KEY', k);
+      upload();
+    }catch(e){ document.getElementById('admErr').textContent = 'Contraseña incorrecta.'; }
   };
-  paint('');
-  document.getElementById('search').addEventListener('input', e => paint(e.target.value.toLowerCase()));
+  document.getElementById('admGo').onclick = go;
+  document.getElementById('admKey').addEventListener('keydown', e => { if(e.key === 'Enter') go(); });
 }
 
 async function upload(){
@@ -86,7 +97,7 @@ async function handleUpload(e){
   const form = new FormData();
   form.append('photo', file);
   try{
-    const res = await fetch(`${API_BASE}/api/upload`, {method:'POST', body:form});
+    const res = await fetch(`${API_BASE}/api/upload`, {method:'POST', headers:{'X-Admin-Token':sessionStorage.getItem('MIPLAT_KEY') || ''}, body:form});
     if(!res.ok) throw new Error('upload');
     renderQR(await res.json(), local);
   }catch(err){
@@ -161,9 +172,9 @@ async function publicPhoto(id){
     shell(`<main class="photo-page"><div class="container photo-wrap"><a class="back" href="#/galeria">← Volver a la galería</a><div class="empty" style="margin-top:18px"><strong>Esta foto ya no está disponible</strong><p>Pero hay más recuerdos del evento esperándote.</p><p><a class="btn btn-primary" href="#/galeria" style="text-decoration:none">Ver la galería</a></p></div></div></main>`);
     return;
   }
-  shell(`<main class="photo-page"><div class="container photo-wrap"><a class="back" href="#/galeria">← Volver a la galería</a><div class="photo-card-large" style="margin-top:18px"><div class="photo-large"><img id="fullPhoto" src="${p.thumb || p.file}" alt="${safeName(p.name)}"/></div><div class="qr-side"><div class="eyebrow">Recuerdo del evento</div><h1>¡Tu foto está lista! 📸</h1><p>Gracias por ser parte de <strong>Mi Plato, Mi Salud</strong>. Guárdala y presume lo que aprendiste hoy. 💚</p><div class="public-qr" id="publicQR"></div><div class="tiny" style="margin-bottom:14px">Escanea este código desde otro celular para pasar la foto.</div><div class="public-actions"><button class="btn btn-primary" id="dlPhoto">Descargar foto</button><button class="btn btn-soft" id="sharePublicQR">Compartir QR</button><a class="btn btn-soft" href="#/galeria">Ver más recuerdos</a></div></div></div></div></main>`);
+  shell(`<main class="photo-page"><div class="container photo-wrap"><a class="back" href="#/galeria">← Volver a la galería</a><div class="photo-card-large" style="margin-top:18px"><div class="photo-large"><img id="fullPhoto" src="${p.thumb || p.file}" alt="Foto del evento"/></div><div class="qr-side"><div class="eyebrow">Recuerdo del evento</div><h1>¡Tu foto está lista! 📸</h1><p>Gracias por ser parte de <strong>Mi Plato, Mi Salud</strong>. Guárdala y presume lo que aprendiste hoy. 💚</p><div class="public-qr" id="publicQR"></div><div class="tiny" style="margin-bottom:14px">Escanea este código desde otro celular para pasar la foto.</div><div class="public-actions"><button class="btn btn-primary" id="dlPhoto">Descargar foto</button><button class="btn btn-soft" id="sharePublicQR">Compartir QR</button><a class="btn btn-soft" href="#/galeria">Ver más recuerdos</a></div></div></div></div></main>`);
   new QRCode(document.getElementById('publicQR'), {text:location.href, width:220, height:220, colorDark:'#176b44', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.M});
-  document.getElementById('dlPhoto').onclick = () => downloadPhoto(p.file, p.name);
+  document.getElementById('dlPhoto').onclick = () => downloadPhoto(p.file, 'foto-' + p.id);
   document.getElementById('sharePublicQR').onclick = () => sharePrintableQR(location.href);
   if(p.thumb){
     const fg = new Image();
@@ -189,7 +200,7 @@ function router(){
   const hash = location.hash || '#/';
   const parts = hash.slice(2).split('/');
   if(parts[0] === 'galeria') gallery();
-  else if(parts[0] === 'subir') upload();
+  else if(parts[0] === 'admin') admin();
   else if(parts[0] === 'foto') publicPhoto(parts[1]);
   else home();
   window.scrollTo(0, 0);

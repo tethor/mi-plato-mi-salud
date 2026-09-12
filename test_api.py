@@ -13,11 +13,12 @@ def get(path):
     with urllib.request.urlopen(B + path) as r:
         return r.status, r.read()
 
-def post_file(path, data, fname="t.jpg", ctype="image/jpeg", boundary="BND"):
+def post_file(path, data, fname="t.jpg", ctype="image/jpeg", boundary="BND", admin=True):
     body = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"{fname}\"\r\n"
             f"Content-Type: {ctype}\r\n\r\n").encode() + data + f"\r\n--{boundary}--\r\n".encode()
-    req = urllib.request.Request(B + path, data=body,
-        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
+    headers = {"Content-Type": f"multipart/form-data; boundary={boundary}"}
+    if admin: headers["X-Admin-Token"] = "1234"
+    req = urllib.request.Request(B + path, data=body, headers=headers)
     try:
         with urllib.request.urlopen(req) as r:
             return r.status, r.read()
@@ -56,6 +57,12 @@ s, th = get(f"/t/{d['id']}.jpg")
 check("thumb 200 y mas chica", s == 200 and len(th) < len(img))
 
 # errores
+s, _ = post_file("/api/upload", b"data", admin=False)
+check("upload sin clave 401", s == 401)
+try:
+    get("/api/admin/check"); check("admin check sin clave 401", False)
+except urllib.error.HTTPError as e:
+    check("admin check sin clave 401", e.code == 401)
 try:
     get("/api/photo/noexiste"); check("photo 404", False)
 except urllib.error.HTTPError as e:
