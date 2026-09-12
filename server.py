@@ -1,11 +1,22 @@
-"""Photobooth QR backend — stdlib only. Corre con: python3 server.py"""
+"""Photobooth QR backend. Corre con: python3 server.py (pillow opcional: miniaturas)"""
 import cgi, json, os, secrets, time, mimetypes
+try:
+    from PIL import Image
+    from io import BytesIO
+    def _thumb(blob, dest):
+        img = Image.open(BytesIO(blob)).convert("RGB")
+        img.thumbnail((800, 800))
+        img.save(dest, quality=70)
+except ImportError:
+    _thumb = None  # ponytail: sin pillow no hay miniaturas, la foto igual se guarda
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 BASE = Path(__file__).parent
 UP = BASE / "uploads"
 UP.mkdir(exist_ok=True)
+TH = UP / "thumbs"
+TH.mkdir(exist_ok=True)
 FE = BASE / "frontend"
 (FE / "fotos").mkdir(parents=True, exist_ok=True)
 STATIC = {"/": "index.html", "/app.js": "app.js", "/styles.css": "styles.css"}
@@ -37,7 +48,7 @@ class H(BaseHTTPRequestHandler):
         self._cors(); self.end_headers(); self.wfile.write(b)
     def _file(self, f, ctype=None):
         f = f.resolve()
-        if f.parent != UP and f.parent != FE / "fotos" and f.parent != FE / "stickers" or not f.is_file():
+        if f.parent != UP and f.parent != TH and f.parent != FE / "fotos" and f.parent != FE / "stickers" or not f.is_file():
             self.send_response(404); self.end_headers(); return
         self._send(f.read_bytes(), ctype or mimetypes.guess_type(str(f))[0] or "image/jpeg")
     def _host(self):
@@ -45,8 +56,11 @@ class H(BaseHTTPRequestHandler):
         return PUBLIC or f"http://{self.headers.get('Host', f'localhost:{PORT}')}"
     def _rec(self, pid, r):
         host = self._host()
-        return {"id": pid, "url": f"{host}/#/foto/{pid}",
-                "file": f"{host}/f/{r['file']}", "name": r["name"], "ts": r["ts"]}
+        rec = {"id": pid, "url": f"{host}/#/foto/{pid}",
+               "file": f"{host}/f/{r['file']}", "name": r["name"], "ts": r["ts"]}
+        if (TH / f"{pid}.jpg").exists():
+            rec["thumb"] = f"{host}/t/{pid}.jpg"
+        return rec
     def do_OPTIONS(self):
         self.send_response(204); self._cors(); self.end_headers()
     def do_GET(self):
@@ -71,6 +85,8 @@ class H(BaseHTTPRequestHandler):
             self._file(FE / "stickers" / path[len("/stickers/"):].strip("/"))
         elif path.startswith("/f/"):
             self._file(UP / path[3:].strip("/"))
+        elif path.startswith("/t/"):
+            self._file(TH / path[3:].strip("/"))
         else:
             self.send_response(404); self.end_headers()
     def do_POST(self):
@@ -98,6 +114,11 @@ class H(BaseHTTPRequestHandler):
         pid = secrets.token_urlsafe(4).replace("-", "").replace("_", "")[:6]
         fname = f"{pid}{ext}"
         UP.joinpath(fname).write_bytes(blob)
+        if _thumb:
+            try:
+                _thumb(blob, TH / f"{pid}.jpg")
+            except Exception:
+                pass
         name = Path(item.filename or "foto").stem[:60] or "foto"
         db = load_db()
         db[pid] = {"file": fname, "name": name, "ts": int(time.time())}

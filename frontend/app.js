@@ -51,7 +51,7 @@ async function home(){
 }
 
 function photoCard(p){
-  return `<a href="#/foto/${p.id}" class="photo-card" style="text-decoration:none" aria-label="Ver ${safeName(p.name)}"><img src="${p.file}" alt="${safeName(p.name)}" loading="lazy"/><div class="overlay"><div style="font-weight:900">${safeName(p.name)}</div><div class="tiny" style="color:#fff">${fmt(p.ts)}</div></div></a>`;
+  return `<a href="#/foto/${p.id}" class="photo-card" style="text-decoration:none" aria-label="Ver ${safeName(p.name)}"><img src="${p.thumb || p.file}" alt="${safeName(p.name)}" loading="lazy"/><div class="overlay"><div style="font-weight:900">${safeName(p.name)}</div><div class="tiny" style="color:#fff">${fmt(p.ts)}</div></div></a>`;
 }
 
 async function gallery(){

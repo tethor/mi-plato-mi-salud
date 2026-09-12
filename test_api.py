@@ -32,8 +32,11 @@ check("app.js 200", s == 200)
 s, _ = get("/styles.css")
 check("styles.css 200", s == 200)
 
-# upload real
-s, raw = post_file("/api/upload", b"\xff\xd8\xff" + b"\x00" * 5000)
+# upload real (foto grande como las del evento)
+from PIL import Image as _I
+_big = "/tmp/big_test.jpg"
+_I.new("RGB", (1600, 1200), (30, 150, 90)).save(_big, quality=92)
+s, raw = post_file("/api/upload", open(_big, "rb").read(), fname="evento.jpg")
 d = json.loads(raw)
 check("upload 200", s == 200)
 check("upload trae id/url/file/name", all(k in d for k in ("id", "url", "file", "name")))
@@ -48,6 +51,9 @@ ids = [p["id"] for p in json.loads(raw)]
 check("photos lista al nuevo", pid in ids)
 s, img = get(f"/f/{d['file'].rsplit('/', 1)[1]}")
 check("imagen directa 200", s == 200 and len(img) > 1000)
+check("thumb en respuesta", "thumb" in d)
+s, th = get(f"/t/{d['id']}.jpg")
+check("thumb 200 y mas chica", s == 200 and len(th) < len(img))
 
 # errores
 try:
