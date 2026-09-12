@@ -3,9 +3,8 @@
 const API_BASE = localStorage.getItem('MIPLAT_API_BASE') || location.origin;
 const HERO_PHOTO = 'fotos/grupal.jpg';
 
-function mascotSVG(size=120){return `<svg viewBox="0 0 160 160" width="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="80" cy="82" r="54" fill="#fff" stroke="#1b6b45" stroke-width="6"/><path d="M44 67c9-21 27-32 51-31 17 1 26 8 33 18-22-2-35 12-43 25-15-1-27-4-41-12Z" fill="#80c849"/><path d="M58 73c14-16 34-19 51-12-2 34-15 55-40 54-17-1-23-19-11-42Z" fill="#f2ce53"/><circle cx="65" cy="84" r="5" fill="#173b32"/><circle cx="92" cy="84" r="5" fill="#173b32"/><path d="M67 101q13 11 26 0" fill="none" stroke="#e95f73" stroke-width="4" stroke-linecap="round"/><path d="M48 122 34 145M112 122l15 23" stroke="#173b32" stroke-width="8" stroke-linecap="round"/><path d="M34 145h-14M127 145h14" stroke="#4fa8d0" stroke-width="9" stroke-linecap="round"/></svg>`}
 
-function nav(){return `<header class="nav"><div class="nav-inner"><a class="brand" href="#/" style="text-decoration:none;color:inherit"><div class="brand-mark">${mascotSVG(36)}</div><span>Mi Plato, Mi Salud</span></a><nav class="nav-links"><a href="#/">Inicio</a><a href="#/galeria">Galería</a><a href="#/subir">Subir foto</a></nav></div></header>`}
+function nav(){return `<header class="nav"><div class="nav-inner"><a class="brand" href="#/" style="text-decoration:none;color:inherit"><img class="brand-logo" src="stickers/logo.png" alt="Mi Plato, Mi Salud"></a><nav class="nav-links"><a href="#/">Inicio</a><a href="#/galeria">Galería</a><a href="#/subir">Subir foto</a></nav></div></header>`}
 function footer(){return `<footer class="footer"><div class="container footer-inner"><div><strong>Mi Plato, Mi Salud</strong><br>IMSS UMF 178 · Evento escolar</div><div>Pequeños hábitos, grandes cambios. ♥</div></div></footer>`}
 function shell(content){document.querySelector('#app').innerHTML=`<div class="page">${nav()}${content}${footer()}</div>`}
 function fmt(ts){try{return new Date(ts*1000).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch(e){return ''}}
@@ -20,16 +19,16 @@ async function getPhotos(){
 function heroArt(){
   return `<div class="hero-art"><div class="blob"></div>`
     + `<img class="hero-photo" src="${HERO_PHOTO}" alt="Foto grupal del evento" onload="document.getElementById('heroDefault').style.display='none'" onerror="this.remove()">`
-    + `<div id="heroDefault"><div class="bubble">¡Hoy aprendimos<br>a comer mejor! 💚</div><div class="plate-card"><div class="plate-top"><span class="mini-tag">PLATO DEL BUEN COMER</span><span style="font-size:26px">🍎🥦</span></div><div class="plate"><span class="food a">🥦</span><span class="food b">🌽</span><span class="food c">🍎</span><span class="food d">💧</span></div><div style="text-align:center;font-weight:900;margin-top:8px">¡Hoy elegimos comer mejor!</div></div><div class="mascot">${mascotSVG(130)}</div><span class="spark s1">✦</span><span class="spark s2">●</span><span class="spark s3">✿</span></div></div>`;
+    + `<div id="heroDefault"><div class="bubble">¡Hoy aprendimos<br>a comer mejor! 💚</div><div class="plate-card"><div class="plate-top"><span class="mini-tag">PLATO DEL BUEN COMER</span><span style="font-size:26px">🍎🥦</span></div><div class="plate"><span class="food a">🥦</span><span class="food b">🌽</span><span class="food c">🍎</span><span class="food d">💧</span></div><div style="text-align:center;font-weight:900;margin-top:8px">¡Hoy elegimos comer mejor!</div></div><div class="mascot"><img src="stickers/mascota.png" alt="Mascota plato saludable"></div><span class="spark s1">✦</span><span class="spark s2">●</span><span class="spark s3">✿</span></div></div>`;
 }
 
 function platoSection(){
   return `<section class="section"><div class="container"><div class="section-head"><div><div class="eyebrow">Hoy aprendimos</div><h2>El Plato del Buen Comer</h2></div><p>Comer bien es fácil cuando el plato tiene de todo un poco. Esto fue lo que descubrieron hoy los niños:</p></div>`
   + `<div class="cards">`
-  + `<div class="card"><div class="stat-icon" style="background:#edf8df">🥦</div><h3>Verduras y frutas</h3><p>Las de todos los colores. Entre más colores en tu plato, mejor.</p></div>`
-  + `<div class="card"><div class="stat-icon" style="background:#fff0bd">🌽</div><h3>Tortilla, arroz y papa</h3><p>Nos dan la energía para jugar, correr y aprender.</p></div>`
-  + `<div class="card"><div class="stat-icon" style="background:#fde8ed">🫘</div><h3>Frijoles, lentejas y huevo</h3><p>Nos ayudan a crecer fuertes. También el pollo y el pescado.</p></div>`
-  + `<div class="card"><div class="stat-icon" style="background:#e4f5fb">💧</div><h3>Agua y movimiento</h3><p>Agua simple todos los días y salir a jugar. Así se cuida el cuerpo.</p></div>`
+  + `<div class="card"><div class="stat-icon sticker-wrap"><img class="sticker-icon" src="stickers/zanahoria.png" alt=""></div><h3>Verduras y frutas</h3><p>Las de todos los colores. Entre más colores en tu plato, mejor.</p></div>`
+  + `<div class="card"><div class="stat-icon sticker-wrap"><img class="sticker-icon" src="stickers/cereales.png" alt=""></div><h3>Tortilla, arroz y papa</h3><p>Nos dan la energía para jugar, correr y aprender.</p></div>`
+  + `<div class="card"><div class="stat-icon sticker-wrap"><img class="sticker-icon" src="stickers/leguminosas.png" alt=""></div><h3>Frijoles, lentejas y huevo</h3><p>Nos ayudan a crecer fuertes. También el pollo y el pescado.</p></div>`
+  + `<div class="card"><div class="stat-icon sticker-wrap"><img class="sticker-icon" src="stickers/gota-agua.png" alt=""></div><h3>Agua y movimiento</h3><p>Agua simple todos los días y salir a jugar. Así se cuida el cuerpo.</p></div>`
   + `</div></div></section>`;
 }
 

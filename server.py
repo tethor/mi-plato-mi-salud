@@ -37,7 +37,7 @@ class H(BaseHTTPRequestHandler):
         self._cors(); self.end_headers(); self.wfile.write(b)
     def _file(self, f, ctype=None):
         f = f.resolve()
-        if f.parent != UP and f.parent != FE / "fotos" or not f.is_file():
+        if f.parent != UP and f.parent != FE / "fotos" and f.parent != FE / "stickers" or not f.is_file():
             self.send_response(404); self.end_headers(); return
         self._send(f.read_bytes(), ctype or mimetypes.guess_type(str(f))[0] or "image/jpeg")
     def _host(self):
@@ -67,6 +67,8 @@ class H(BaseHTTPRequestHandler):
             self._json(200, self._rec(pid, db[pid]))
         elif path.startswith("/fotos/"):
             self._file(FE / "fotos" / path[len("/fotos/"):].strip("/"))
+        elif path.startswith("/stickers/"):
+            self._file(FE / "stickers" / path[len("/stickers/"):].strip("/"))
         elif path.startswith("/f/"):
             self._file(UP / path[3:].strip("/"))
         else:
